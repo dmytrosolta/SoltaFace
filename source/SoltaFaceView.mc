@@ -12,6 +12,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
     private var _partialUpdatesAllowed as Boolean;
     private var _showSeconds as Boolean;
     private var _timeFont as FontResource?;
+    private var _dayFont as FontResource?;
     private var _dateFont as FontResource?;
     private var _metricFont as FontResource?;
     private var _metricSmallFont as FontResource?;
@@ -22,6 +23,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
         _partialUpdatesAllowed = (WatchUi.WatchFace has :onPartialUpdate);
         _showSeconds = true;
         _timeFont = null;
+        _dayFont = null;
         _dateFont = null;
         _metricFont = null;
         _metricSmallFont = null;
@@ -29,6 +31,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
 
     function onLayout(dc as Dc) as Void {
         _timeFont = WatchUi.loadResource(Rez.Fonts.TimeFont) as FontResource;
+        _dayFont = WatchUi.loadResource(Rez.Fonts.DayFont) as FontResource;
         _dateFont = WatchUi.loadResource(Rez.Fonts.DateFont) as FontResource;
         _metricFont = WatchUi.loadResource(Rez.Fonts.MetricFont) as FontResource;
         _metricSmallFont = WatchUi.loadResource(Rez.Fonts.MetricSmallFont) as FontResource;
@@ -79,26 +82,27 @@ class SoltaFaceView extends WatchUi.WatchFace {
         var weekday = shortUpper(dateInfo.day_of_week.toString());
         var month = shortUpper(dateInfo.month.toString());
         var dateText = Lang.format("$1$ $2$", [dateInfo.day, month]);
+        var dayFont = _dayFont;
         var dateFont = _dateFont;
 
-        if (dateFont == null) {
+        if ((dayFont == null) || (dateFont == null)) {
             return;
         }
 
         // Date/day own the upper arc; status groups sit directly below it.
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(65, 23, Graphics.FONT_SMALL, weekday, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(65, 23, dayFont, weekday, Graphics.TEXT_JUSTIFY_LEFT);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
-        dc.drawText(120, 29, dateFont, dateText, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(120, 26, dateFont, dateText, Graphics.TEXT_JUSTIFY_LEFT);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        drawBell(dc, 40, 57);
-        dc.drawText(53, 48, dateFont, notificationCount.toString(), Graphics.TEXT_JUSTIFY_LEFT);
+        drawBell(dc, 40, 64);
+        dc.drawText(53, 55, dateFont, notificationCount.toString(), Graphics.TEXT_JUSTIFY_LEFT);
 
         // Right-align the battery group so a three-digit percentage stays safe.
         var batteryText = battery.toString();
-        drawBattery(dc, 159, 52, 17, 10, battery);
-        dc.drawText(width - 27, 48, dateFont, batteryText, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawBattery(dc, 159, 59, 17, 10, battery);
+        dc.drawText(width - 27, 55, dateFont, batteryText, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
     private function drawTime(dc as Dc, width as Number) as Void {
