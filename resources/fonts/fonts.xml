@@ -1,0 +1,7 @@
+<resources>
+    <fonts>
+        <font id="TimeFont" filename="din_time.fnt" filter="0123456789:" />
+        <font id="LabelFont" filename="din_label.fnt" filter="0123456789 ABCDEFGJLMNOPRSTUVY" />
+        <font id="DateFont" filename="din_date.fnt" filter="0123456789 ABCDEFGJLMNOPRSTUVY" />
+    </fonts>
+</resources>
