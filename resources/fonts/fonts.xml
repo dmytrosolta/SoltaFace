@@ -1,8 +1,8 @@
 <resources>
     <fonts>
         <font id="TimeFont" filename="din_time.fnt" filter="0123456789:" />
-        <font id="MetricFont" filename="din_metric.fnt" filter="0123456789" />
-        <font id="MetricSmallFont" filename="din_metric_small.fnt" filter="0123456789" />
+        <font id="MetricFont" filename="din_metric.fnt" filter="0123456789-" />
+        <font id="MetricSmallFont" filename="din_metric_small.fnt" filter="0123456789-" />
         <font id="DateFont" filename="din_date.fnt" filter="0123456789 ABCDEFGJLMNOPRSTUVY" />
     </fonts>
 </resources>
