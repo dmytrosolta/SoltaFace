@@ -10,6 +10,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
 
     private var _secondsX as Number;
     private var _partialUpdatesAllowed as Boolean;
+    private var _showSeconds as Boolean;
     private var _timeFont as FontResource?;
     private var _dateFont as FontResource?;
     private var _metricFont as FontResource?;
@@ -19,6 +20,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
         WatchFace.initialize();
         _secondsX = 0;
         _partialUpdatesAllowed = (WatchUi.WatchFace has :onPartialUpdate);
+        _showSeconds = true;
         _timeFont = null;
         _dateFont = null;
         _metricFont = null;
@@ -51,21 +53,21 @@ class SoltaFaceView extends WatchUi.WatchFace {
 
         // Include seconds in every full/minute refresh. Subsequent seconds are
         // handled by onPartialUpdate without touching any other complication.
-        if (_partialUpdatesAllowed) {
+        if (_partialUpdatesAllowed && _showSeconds) {
             drawSeconds(dc);
         }
     }
 
     public function onPartialUpdate(dc as Dc) as Void {
-        if (!_partialUpdatesAllowed) {
+        if (!_partialUpdatesAllowed || !_showSeconds) {
             return;
         }
 
         // This 32x29 rectangle contains only the superscript seconds. Filling
         // it black first prevents stale segments and MIP ghost digits.
-        dc.setClip(_secondsX, 70, 32, 29);
+        dc.setClip(_secondsX, 81, 32, 29);
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.fillRectangle(_secondsX, 70, 32, 29);
+        dc.fillRectangle(_secondsX, 81, 32, 29);
         drawSeconds(dc);
     }
 
@@ -90,13 +92,13 @@ class SoltaFaceView extends WatchUi.WatchFace {
         dc.drawText(120, 29, dateFont, dateText, Graphics.TEXT_JUSTIFY_LEFT);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        drawBell(dc, 40, 54);
-        dc.drawText(53, 45, dateFont, notificationCount.toString(), Graphics.TEXT_JUSTIFY_LEFT);
+        drawBell(dc, 40, 57);
+        dc.drawText(53, 48, dateFont, notificationCount.toString(), Graphics.TEXT_JUSTIFY_LEFT);
 
         // Right-align the battery group so a three-digit percentage stays safe.
         var batteryText = battery.toString();
-        drawBattery(dc, 159, 49, 17, 10, battery);
-        dc.drawText(width - 27, 45, dateFont, batteryText, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawBattery(dc, 159, 52, 17, 10, battery);
+        dc.drawText(width - 27, 48, dateFont, batteryText, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
     private function drawTime(dc as Dc, width as Number) as Void {
@@ -127,7 +129,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
         }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(startX, 70, timeFont, timeText, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(startX, 81, timeFont, timeText, Graphics.TEXT_JUSTIFY_LEFT);
         _secondsX = startX + timeWidth + 3;
     }
 
@@ -161,7 +163,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
     private function drawSeconds(dc as Dc) as Void {
         var seconds = System.getClockTime().sec.format("%02d");
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.drawText(_secondsX, 70, Graphics.FONT_SMALL, seconds, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(_secondsX, 81, Graphics.FONT_SMALL, seconds, Graphics.TEXT_JUSTIFY_LEFT);
     }
 
     private function getLatestHeartRate() as Number? {
@@ -224,11 +226,14 @@ class SoltaFaceView extends WatchUi.WatchFace {
     }
 
     function onExitSleep() as Void {
+        _showSeconds = true;
+        WatchUi.requestUpdate();
     }
 
     function onEnterSleep() as Void {
-        // Fenix 5X continues to invoke onPartialUpdate in low-power mode.
-        // No timer or full-screen refresh is needed for the transition.
+        _showSeconds = false;
+        // Force one full redraw so the last active-mode seconds glyph is erased.
+        WatchUi.requestUpdate();
     }
 
     public function turnPartialUpdatesOff() as Void {
