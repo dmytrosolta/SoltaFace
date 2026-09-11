@@ -1,2 +1,6 @@
 bin/
 .DS_Store
+
+*.iq
+
+artifacts/
