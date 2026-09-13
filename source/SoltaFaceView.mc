@@ -37,6 +37,8 @@ class SoltaFaceView extends WatchUi.WatchFace {
     private var _secondsClipWidth as Number;
     private var _secondsClipHeight as Number;
     private var _partialUpdatesAllowed as Boolean;
+    private var _alwaysRunningSeconds as Boolean;
+    private var _inSleep as Boolean;
     private var _secondsActive as Boolean;
     private var _secondsValue as Number;
     private var _timeFont as FontResource?;
@@ -54,6 +56,8 @@ class SoltaFaceView extends WatchUi.WatchFace {
         _secondsClipWidth = 32;
         _secondsClipHeight = 30;
         _partialUpdatesAllowed = (WatchUi.WatchFace has :onPartialUpdate);
+        _alwaysRunningSeconds = getApp().getAlwaysRunningSeconds();
+        _inSleep = false;
         _secondsActive = true;
         _secondsValue = System.getClockTime().sec;
         _timeFont = null;
@@ -82,6 +86,13 @@ class SoltaFaceView extends WatchUi.WatchFace {
     }
 
     function onShow() as Void {
+        reloadSettings();
+    }
+
+    function reloadSettings() as Void {
+        _alwaysRunningSeconds = getApp().getAlwaysRunningSeconds();
+        _secondsActive = _partialUpdatesAllowed &&
+                (!_inSleep || _alwaysRunningSeconds);
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -297,18 +308,22 @@ class SoltaFaceView extends WatchUi.WatchFace {
     }
 
     function onExitSleep() as Void {
-        _secondsActive = true;
+        _inSleep = false;
+        reloadSettings();
         _secondsValue = System.getClockTime().sec;
         WatchUi.requestUpdate();
     }
 
     function onEnterSleep() as Void {
-        // Preserve the last drawn seconds value without further 1 Hz updates.
-        _secondsActive = false;
+        _inSleep = true;
+        reloadSettings();
+        // Active-only mode preserves the last rendered seconds. Always-running
+        // mode leaves the lightweight seconds-only partial update enabled.
     }
 
     public function turnPartialUpdatesOff() as Void {
         _partialUpdatesAllowed = false;
+        _secondsActive = false;
         // Keep the last seconds visible if the platform stops 1 Hz updates.
         WatchUi.requestUpdate();
     }

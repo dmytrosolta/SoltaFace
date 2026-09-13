@@ -1,3 +1,8 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <string id="AppName">SoltaFace</string>
+    <string id="AlwaysRunningSecondsTitle">Always-running seconds</string>
+    <string id="AlwaysRunningSecondsPrompt">When enabled, seconds continue updating in low-power mode and may reduce battery life.</string>
+    <string id="SecondsMenuLabel">Seconds</string>
+    <string id="SecondsActiveOnly">Active only</string>
+    <string id="SecondsAlwaysRunning">Always running</string>
 </strings>

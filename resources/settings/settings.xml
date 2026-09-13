@@ -1,0 +1,13 @@
+<resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <properties>
+        <property id="alwaysRunningSeconds" type="boolean">false</property>
+    </properties>
+
+    <settings>
+        <setting propertyKey="@Properties.alwaysRunningSeconds"
+                 title="@Strings.AlwaysRunningSecondsTitle"
+                 prompt="@Strings.AlwaysRunningSecondsPrompt">
+            <settingConfig type="boolean" />
+        </setting>
+    </settings>
+</resources>
