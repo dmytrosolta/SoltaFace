@@ -1,0 +1,10 @@
+<resources>
+    <fonts>
+        <font id="TimeFont" filename="din_time.fnt" filter="0123456789:" antialias="false" />
+        <font id="MetricFont" filename="din_metric.fnt" filter="0123456789-" antialias="false" />
+        <font id="MetricSmallFont" filename="din_metric_small.fnt" filter="0123456789-" antialias="false" />
+        <font id="DayFont" filename="din_day.fnt" filter="ADEFGHIMNORSTUW" antialias="false" />
+        <font id="DateFont" filename="din_date.fnt" filter="0123456789 ABCDEFGJLMNOPRSTUVY" antialias="false" />
+        <font id="BatteryFont" filename="din_battery.fnt" filter="0123456789%" antialias="false" />
+    </fonts>
+</resources>

@@ -37,6 +37,8 @@ class SoltaFaceView extends WatchUi.WatchFace {
     private var _secondsClipWidth as Number;
     private var _secondsClipHeight as Number;
     private var _partialUpdatesAllowed as Boolean;
+    private var _isInstinct as Boolean;
+    private var _subscreen;
     private var _alwaysRunningSeconds as Boolean;
     private var _inSleep as Boolean;
     private var _secondsActive as Boolean;
@@ -56,6 +58,8 @@ class SoltaFaceView extends WatchUi.WatchFace {
         _secondsClipWidth = 32;
         _secondsClipHeight = 30;
         _partialUpdatesAllowed = (WatchUi.WatchFace has :onPartialUpdate);
+        _isInstinct = false;
+        _subscreen = null;
         _alwaysRunningSeconds = getApp().getAlwaysRunningSeconds();
         _inSleep = false;
         _secondsActive = true;
@@ -70,6 +74,11 @@ class SoltaFaceView extends WatchUi.WatchFace {
 
     function onLayout(dc as Dc) as Void {
         _layout = new SoltaFaceLayout(dc.getWidth());
+        _isInstinct = (dc.getWidth() == 176) && (dc.getHeight() == 176);
+        _subscreen = null;
+        if (_isInstinct && (WatchUi has :getSubscreen)) {
+            _subscreen = WatchUi.getSubscreen();
+        }
         _timeFont = WatchUi.loadResource(Rez.Fonts.TimeFont) as FontResource;
         _dayFont = WatchUi.loadResource(Rez.Fonts.DayFont) as FontResource;
         _dateFont = WatchUi.loadResource(Rez.Fonts.DateFont) as FontResource;
@@ -79,7 +88,7 @@ class SoltaFaceView extends WatchUi.WatchFace {
 
         var secondsFont = _metricSmallFont;
         if (secondsFont != null) {
-            _secondsY = _layout.px(81);
+            _secondsY = _isInstinct ? 83 : _layout.px(81);
             _secondsClipWidth = dc.getTextWidthInPixels("00", secondsFont);
             _secondsClipHeight = dc.getFontHeight(secondsFont);
         }
@@ -105,12 +114,182 @@ class SoltaFaceView extends WatchUi.WatchFace {
         dc.clear();
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        if (_isInstinct) {
+            drawInstinctStatus(dc);
+            drawInstinctTime(dc);
+            drawInstinctBottomData(dc);
+            drawInstinctBattery(dc);
+            drawSeconds(dc);
+            return;
+        }
+
         drawStatus(dc, width);
         drawTime(dc, width);
         drawBottomData(dc, width);
 
         // Full/minute refreshes preserve the last active seconds in sleep.
         drawSeconds(dc);
+    }
+
+    private function drawInstinctStatus(dc as Dc) as Void {
+        var dateInfo = Gregorian.info(Time.now(), Time.FORMAT_LONG);
+        var weekday = shortUpper(dateInfo.day_of_week.toString());
+        var month = shortUpper(dateInfo.month.toString());
+        var dateText = Lang.format("$1$ $2$", [dateInfo.day, month]);
+        var dayFont = _dayFont;
+        var dateFont = _dateFont;
+
+        if ((dayFont == null) || (dateFont == null)) {
+            return;
+        }
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(30, 11, dayFont, weekday, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(30, 33, dateFont, dateText, Graphics.TEXT_JUSTIFY_LEFT);
+    }
+
+    private function drawInstinctTime(dc as Dc) as Void {
+        var clockTime = System.getClockTime();
+        var settings = System.getDeviceSettings();
+        var hour = clockTime.hour;
+
+        if (!settings.is24Hour) {
+            hour = hour % 12;
+            if (hour == 0) {
+                hour = 12;
+            }
+        }
+
+        var timeText = Lang.format("$1$:$2$", [hour, clockTime.min.format("%02d")]);
+        var timeFont = _timeFont;
+        var secondsFont = _metricSmallFont;
+        if ((timeFont == null) || (secondsFont == null)) {
+            return;
+        }
+
+        var timeWidth = dc.getTextWidthInPixels(timeText, timeFont);
+        var secondsWidth = dc.getTextWidthInPixels("00", secondsFont);
+        var groupWidth = timeWidth + 3 + secondsWidth;
+        var startX = (dc.getWidth() - groupWidth) / 2;
+
+        if (startX < 8) {
+            startX = 8;
+        }
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(startX, 68, timeFont, timeText, Graphics.TEXT_JUSTIFY_LEFT);
+        _secondsX = startX + timeWidth + 3;
+    }
+
+    private function drawInstinctBottomData(dc as Dc) as Void {
+        var info = ActivityMonitor.getInfo();
+        var stepsValue = null;
+        if ((info has :steps) && (info.steps != null)) {
+            stepsValue = info.steps;
+        }
+        var stepsText = (stepsValue == null) ? "--" : stepsValue.toString();
+
+        var heartRate = getLatestHeartRate();
+        var heartText = (heartRate == null) ? "--" : heartRate.toString();
+        var stepsFont = _metricFont;
+        if ((stepsValue != null) && (stepsValue >= 10000)) {
+            stepsFont = _metricSmallFont;
+        }
+
+        var metricFont = _metricFont;
+        if ((stepsFont == null) || (metricFont == null)) {
+            return;
+        }
+
+        var stepsWidth = dc.getTextWidthInPixels(stepsText, stepsFont);
+        var stepsGroupWidth = 15 + 4 + stepsWidth;
+        var stepsX = 52 - (stepsGroupWidth / 2);
+        var heartWidth = dc.getTextWidthInPixels(heartText, metricFont);
+        var heartGroupWidth = 14 + 5 + heartWidth;
+        var heartX = 126 - (heartGroupWidth / 2);
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        drawInstinctFootprints(dc, stepsX, 132);
+        dc.drawText(stepsX + 19, 128, stepsFont, stepsText, Graphics.TEXT_JUSTIFY_LEFT);
+        drawInstinctHeart(dc, heartX + 7, 137);
+        dc.drawText(heartX + 19, 128, metricFont, heartText, Graphics.TEXT_JUSTIFY_LEFT);
+    }
+
+    private function drawInstinctBattery(dc as Dc) as Void {
+        var battery = (System.getSystemStats().battery + 0.5).toNumber();
+        if (battery < 0) {
+            battery = 0;
+        } else if (battery > 100) {
+            battery = 100;
+        }
+
+        var batteryFont = _batteryFont;
+        if (batteryFont == null) {
+            return;
+        }
+
+        var batteryText = battery.toString() + "%";
+        var subscreen = _subscreen;
+        if (subscreen == null) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+            dc.drawText(103, 8, batteryFont, batteryText, Graphics.TEXT_JUSTIFY_CENTER);
+            return;
+        }
+
+        var boxX = (subscreen.x == null) ? 113 : subscreen.x;
+        var boxY = (subscreen.y == null) ? 0 : subscreen.y;
+        var boxWidth = subscreen.width;
+        var boxHeight = subscreen.height;
+
+        // Fully repaint the physical subscreen on every full update so system
+        // overlays cannot leave stale pixels behind.
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillRectangle(boxX, boxY, boxWidth, boxHeight);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.drawText(boxX + (boxWidth / 2), boxY + 12,
+                batteryFont, batteryText, Graphics.TEXT_JUSTIFY_CENTER);
+
+        var barX = boxX + 10;
+        var barY = boxY + 40;
+        var barWidth = boxWidth - 20;
+        var fillWidth = ((barWidth - 4) * battery) / 100;
+        if ((battery > 0) && (fillWidth < 1)) {
+            fillWidth = 1;
+        }
+        dc.setPenWidth(1);
+        dc.drawRectangle(barX, barY, barWidth, 7);
+        if (fillWidth > 0) {
+            dc.fillRectangle(barX + 2, barY + 2, fillWidth, 3);
+        }
+    }
+
+    private function drawInstinctHeart(dc as Dc, x as Number, y as Number) as Void {
+        dc.fillCircle(x - 3, y, 3);
+        dc.fillCircle(x + 3, y, 3);
+        dc.fillPolygon([
+            [x - 6, y + 1],
+            [x + 6, y + 1],
+            [x, y + 8]
+        ]);
+    }
+
+    private function drawInstinctFootprints(dc as Dc, x as Number, y as Number) as Void {
+        dc.fillCircle(x + 4, y + 4, 2);
+        dc.fillPolygon([
+            [x + 2, y + 6],
+            [x + 6, y + 6],
+            [x + 6, y + 12],
+            [x + 4, y + 15],
+            [x + 2, y + 13]
+        ]);
+        dc.fillCircle(x + 11, y + 2, 2);
+        dc.fillPolygon([
+            [x + 9, y + 4],
+            [x + 13, y + 4],
+            [x + 14, y + 9],
+            [x + 12, y + 13],
+            [x + 10, y + 11]
+        ]);
     }
 
     public function onPartialUpdate(dc as Dc) as Void {
