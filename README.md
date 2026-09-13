@@ -1,133 +1,105 @@
 # SoltaFace
 
-SoltaFace is a minimalist, high-contrast Garmin Connect IQ watch face designed first for the Garmin fēnix 5X.
+SoltaFace is a minimalist, high-contrast digital watch face for supported Garmin MIP watches. It keeps time immediately readable while presenting useful daily data without turning the display into a dashboard.
 
-The goal is simple: show the information that matters most, make the time immediately readable, and use the limited 240×240 MIP display efficiently.
+SoltaFace is available publicly in the Garmin Connect IQ Store and remains under active development.
 
 ## Features
 
-- Large, high-contrast digital time
-- Respects Garmin 12/24-hour time settings
-- Seconds shown only while the watch face is active
+- Large digital HH:MM time that follows the system 12/24-hour format
+- Configurable seconds: **Active only** or **Always running**
+- Battery-friendly default that freezes the last displayed seconds in low-power mode
 - Weekday and date
-- Notification count
-- Battery percentage
-- Exact daily step count
-- Latest available wrist heart rate
-- Graceful `--` fallback when heart-rate data is unavailable
-- Dynamic font sizing for 5-digit step counts
-- Optimized for the fēnix 5X 240×240 round MIP display
-- No unnecessary animations, weather data, or decorative elements
+- Battery percentage with a visual progress indicator
+- Exact daily step count, including five-digit values
+- Current/latest wrist heart rate with a graceful `--` fallback
+- High-contrast typography and native resources for each supported display size
+- On-watch settings on supported devices
 
-## Battery-friendly seconds
+## Compatibility
 
-SoltaFace shows seconds only while the watch face is active.
+SoltaFace supports Garmin MIP displays at 176×176, 240×240, 260×260, and 280×280 resolutions.
 
-When the watch enters low-power mode:
+Supported device families:
 
-- seconds are hidden
-- the stale seconds area is cleared
-- normal minute-based updates continue
+- Instinct 2 and Instinct 2X
+- fēnix 5 and 5 Plus families: fēnix 5X, 5S Plus, 5 Plus, and 5X Plus
+- fēnix 6 family: 6S, 6S Pro, 6, 6 Pro, and 6X Pro
+- fēnix 7 family: 7S, 7S Pro, 7, 7 Pro, 7 Pro No Wi-Fi, 7X, 7X Pro, and 7X Pro No Wi-Fi
+- fēnix 8 Solar MIP: 47 mm and 51 mm
 
-When the watch face becomes active again, seconds return and update once per second using Garmin partial updates.
+Each resolution uses its own native layout and font resources rather than scaling a single design.
 
-This keeps the face useful when actively viewed without unnecessarily refreshing the seconds continuously in low-power mode.
+## Seconds and settings
 
-## Design
+The **Always-running seconds** setting is disabled by default:
 
-SoltaFace uses a simple three-zone layout:
+- **Active only (default):** seconds update while the watch face is active, then remain visible at their last value in low-power mode.
+- **Always running:** seconds continue updating in low-power mode on devices that support partial updates. This may reduce battery life.
 
-- **Top:** weekday, date, notifications, battery
-- **Center:** large HH:MM time with small seconds
-- **Bottom:** steps and heart rate with compact icons
-
-The visual hierarchy is intentionally strict:
-
-**Time → day/date/status → activity metrics**
-
-The interface is monochrome and optimized for quick readability on a transflective MIP display.
-
-## Current device support
-
-Tested and tuned for:
-
-- Garmin fēnix 5X
-- tactix Charlie
-- Connect IQ API 3.1
-- 240×240 round display
-
-Support for additional Garmin devices may be added later.
-
-## Development environment
-
-Tested with:
-
-- Connect IQ SDK 9.2.0
-- Java 17
-- Garmin Monkey C extension for Visual Studio Code
+On supported watches, open the watch-face settings on the device to change this option. The change is applied immediately.
 
 ## Build
 
-A Garmin developer signing key is required.
+Requirements:
 
-Example release build:
+- Garmin Connect IQ SDK
+- Java 17
+- A Garmin developer signing key
 
-    monkeyc \
-      -o bin/SoltaFace.prg \
-      -f monkey.jungle \
-      -y /path/to/developer_key.der \
-      -d fenix5x \
-      -r \
-      -w
+Build a release for a target product, for example:
 
-A successful build should end with:
+```sh
+monkeyc -o bin/SoltaFace.prg -f monkey.jungle \
+  -y /path/to/developer_key.der -d fenix7 -r -w
+```
 
-    BUILD SUCCESSFUL
+Replace `fenix7` with any product ID listed in `manifest.xml`.
 
-## Run in the simulator
+## Simulator
 
 Start the Connect IQ Simulator:
 
-    connectiq
+```sh
+connectiq
+```
 
-Then run:
+Then build for the chosen target and run the app:
 
-    monkeydo bin/SoltaFace.prg fenix5x
+```sh
+monkeydo bin/SoltaFace.prg fenix7
+```
 
-## Sideload to a fēnix 5X
+## Sideload
 
-Connect the watch over USB.
+1. Build `bin/SoltaFace.prg` for the exact watch model.
+2. Connect the watch over USB.
+3. Copy the file to `GARMIN/APPS/SoltaFace.prg` on the watch.
+4. Safely eject the watch before disconnecting it.
 
-Copy the release build to:
+Example on macOS:
 
-    GARMIN/APPS/SoltaFace.prg
-
-For example on macOS:
-
-    cp bin/SoltaFace.prg /Volumes/GARMIN/GARMIN/APPS/SoltaFace.prg
-
-Safely unmount the device before disconnecting it.
+```sh
+cp bin/SoltaFace.prg /Volumes/GARMIN/GARMIN/APPS/SoltaFace.prg
+```
 
 ## Project structure
 
-    SoltaFace/
-    ├── manifest.xml
-    ├── monkey.jungle
-    ├── source/
-    │   ├── SoltaFaceApp.mc
-    │   └── SoltaFaceView.mc
-    └── resources/
-        ├── fonts/
-        ├── layouts/
-        ├── drawables/
-        └── strings/
+```text
+SoltaFace/
+├── manifest.xml
+├── monkey.jungle
+├── source/
+├── resources/
+├── resources-round-260x260/
+├── resources-round-280x280/
+└── resources-semioctagon-176x176/
+```
 
 ## Status
 
-SoltaFace is currently in active development.
-
-The first version has been tested both in the Garmin Connect IQ Simulator and on a physical Garmin fēnix 5X.
+SoltaFace is a public Connect IQ Store app in active development. Device support, layouts, and behavior are validated in the Connect IQ Simulator and on compatible hardware.
 
 ## License
 
-License information will be added before the first public release.
+No license has been published for this repository.
